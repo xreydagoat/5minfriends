@@ -1,11 +1,12 @@
 // GitHub Pages does NOT support server-side code.
-// So instead, this example mimics a server-less environment
-// using only browser-side JavaScript and a pseudo-match system.
+// This is a client-only simulation of "5 Minute Friends"
+// It uses local browser JavaScript only. No real-time matching.
 
-// This version removes WebSocket logic and replaces it with local simulation.
-// It does NOT match real users, but mimics 5-minute interaction
-
-// Put this code in your index.html inside a <script> tag or separate .js file
+// HTML structure expected:
+// <div id="chat-log"></div>
+// <input id="message-input" />
+// <button id="send-button">Send</button>
+// <div id="timer"></div>
 
 let chatLog = document.getElementById("chat-log");
 let messageInput = document.getElementById("message-input");
@@ -48,9 +49,9 @@ sendButton.onclick = () => {
   if (!message) return;
   appendMessage("You", message);
 
-  // Simulated response from bot
+  // Simulated reply
   setTimeout(() => {
-    appendMessage("Friend", "I'm just a demo — no server connection here.");
+    appendMessage("Friend", "I'm just a demo — not a real person.");
   }, 1000);
 
   messageInput.value = "";
