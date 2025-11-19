@@ -1,132 +1,59 @@
-// server.js
-const express = require("express");
-const http = require("http");
-const WebSocket = require("ws");
+// GitHub Pages does NOT support server-side code.
+// So instead, this example mimics a server-less environment
+// using only browser-side JavaScript and a pseudo-match system.
 
-const app = express();
+// This version removes WebSocket logic and replaces it with local simulation.
+// It does NOT match real users, but mimics 5-minute interaction
 
-// Serve static files from the "public" folder (index.html lives here)
-app.use(express.static("public"));
+// Put this code in your index.html inside a <script> tag or separate .js file
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+let chatLog = document.getElementById("chat-log");
+let messageInput = document.getElementById("message-input");
+let sendButton = document.getElementById("send-button");
+let timerDisplay = document.getElementById("timer");
 
-// Track connected clients and pairings
-const clients = new Set();
-let waitingClient = null; // one person waiting for a match
-const pairings = new Map(); // ws -> partner ws
+let startTime = 5 * 60; // 5 minutes in seconds
+let currentTime = startTime;
+let timer;
 
-// Send updated online count to everyone
-function broadcastOnlineCount() {
-  const msg = JSON.stringify({
-    type: "online_count",
-    count: clients.size,
-  });
+function startTimer() {
+  timer = setInterval(() => {
+    currentTime--;
+    let minutes = Math.floor(currentTime / 60);
+    let seconds = currentTime % 60;
+    timerDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
-  for (const client of clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(msg);
+    if (currentTime <= 0) {
+      clearInterval(timer);
+      endChat();
     }
-  }
+  }, 1000);
 }
 
-// Clean up when a client leaves
-function handleDisconnect(ws) {
-  clients.delete(ws);
-
-  // If they were the one waiting, clear the queue
-  if (waitingClient === ws) {
-    waitingClient = null;
-  }
-
-  // If they were paired, notify the partner
-  const partner = pairings.get(ws);
-  if (partner) {
-    pairings.delete(ws);
-    pairings.delete(partner);
-
-    if (partner.readyState === WebSocket.OPEN) {
-      partner.send(
-        JSON.stringify({
-          type: "partner_left",
-        })
-      );
-    }
-  }
-
-  broadcastOnlineCount();
+function endChat() {
+  sendButton.disabled = true;
+  messageInput.disabled = true;
+  appendMessage("System", "Time's up! Thanks for chatting.");
 }
 
-// Handle new WebSocket connection
-wss.on("connection", (ws) => {
-  clients.add(ws);
-  broadcastOnlineCount();
+function appendMessage(sender, message) {
+  const div = document.createElement("div");
+  div.textContent = `${sender}: ${message}`;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
 
-  ws.on("message", (raw) => {
-    let data;
-    try {
-      data = JSON.parse(raw.toString());
-    } catch (err) {
-      console.error("Invalid message JSON:", raw.toString());
-      return;
-    }
+sendButton.onclick = () => {
+  const message = messageInput.value.trim();
+  if (!message) return;
+  appendMessage("You", message);
 
-    switch (data.type) {
-      case "join_queue": {
-        // If someone is already waiting, pair them
-        if (
-          waitingClient &&
-          waitingClient !== ws &&
-          waitingClient.readyState === WebSocket.OPEN
-        ) {
-          const partner = waitingClient;
-          waitingClient = null;
+  // Simulated response from bot
+  setTimeout(() => {
+    appendMessage("Friend", "I'm just a demo — no server connection here.");
+  }, 1000);
 
-          // Store pairings both ways
-          pairings.set(ws, partner);
-          pairings.set(partner, ws);
+  messageInput.value = "";
+};
 
-          // Notify both that they're matched
-          const payload = JSON.stringify({ type: "matched" });
-          ws.send(payload);
-          partner.send(payload);
-        } else {
-          // Otherwise, this client waits
-          waitingClient = ws;
-        }
-        break;
-      }
-
-      case "chat_message": {
-        const partner = pairings.get(ws);
-        if (partner && partner.readyState === WebSocket.OPEN) {
-          partner.send(
-            JSON.stringify({
-              type: "chat_message",
-              text: data.text,
-            })
-          );
-        }
-        break;
-      }
-
-      case "leave": {
-        handleDisconnect(ws);
-        break;
-      }
-
-      default:
-        console.log("Unknown message type:", data.type);
-    }
-  });
-
-  ws.on("close", () => {
-    handleDisconnect(ws);
-  });
-});
-
-// Start HTTP + WebSocket server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`5 Minute Friends server running on http://localhost:${PORT}`);
-});
+window.onload = startTimer;
