@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5 Minute Friends</title>
+  <style>
+    body {
+      background-color: #050509;
+      color: #f5f5f5;
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #chat-log {
+      border: 1px solid #333;
+      background: #131322;
+      padding: 10px;
+      border-radius: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    #message-input {
+      width: 75%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    #send-button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      background: #7f5dff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #timer {
+      text-align: center;
+      margin: 10px 0;
+      color: #9a9ab5;
+    }
+  </style>
+</head>
+<body>
+  <h1>5 Minute Friends</h1>
+  <p id="timer">5:00</p>
+  <div id="chat-log"></div>
+  <input id="message-input" placeholder="Say something nice..." />
+  <button id="send-button">Send</button>
+
+  <script>
+    const chatLog = document.getElementById("chat-log");
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+    const timerDisplay = document.getElementById("timer");
+
+    let timeLeft = 5 * 60;
+    let timer = setInterval(() => {
+      timeLeft--;
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = String(timeLeft % 60).padStart(2, "0");
+      timerDisplay.textContent = `${minutes}:${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        sendButton.disabled = true;
+        messageInput.disabled = true;
+        appendMessage("System", "Time’s up! Thanks for chatting.");
+      }
+    }, 1000);
+
+    function appendMessage(sender, message) {
+      const msg = document.createElement("div");
+      msg.textContent = `${sender}: ${message}`;
+      chatLog.appendChild(msg);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    sendButton.onclick = () => {
+      const msg = messageInput.value.trim();
+      if (!msg) return;
+      appendMessage("You", msg);
+      messageInput.value = "";
+
+      setTimeout(() => {
+        appendMessage("Friend", "I'm just a demo friend ✨");
+      }, 1000);
+    };
+  </script>
+</body>
+</html>
